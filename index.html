@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard - Network Security Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c1419 0%, #1a2332 50%, #0f1419 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a, #1e40af);
+            padding: 20px 30px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+            border-bottom: 2px solid #3b82f6;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #374151;
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 2px solid #374151;
+            color: #9ca3af;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            border-color: #3b82f6;
+            color: #ffffff;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            border-color: #dc2626;
+            color: #ffffff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-title {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-change {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-good { color: #10b981; }
+        .status-warning { color: #f59e0b; }
+        .status-critical { color: #ef4444; }
+
+        .chart-container {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #ffffff;
+            border-bottom: 2px solid #374151;
+            padding-bottom: 10px;
+        }
+
+        .threats-list {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .threat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-left: 4px solid;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background: rgba(55, 65, 81, 0.3);
+        }
+
+        .threat-high { border-left-color: #ef4444; }
+        .threat-medium { border-left-color: #f59e0b; }
+        .threat-low { border-left-color: #10b981; }
+
+        .threat-info h4 {
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .threat-info p {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .threat-severity {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .severity-high {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .severity-medium {
+            background: #d97706;
+            color: #ffffff;
+        }
+
+        .severity-low {
+            background: #059669;
+            color: #ffffff;
+        }
+
+        .security-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .tool-card {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            background: linear-gradient(135deg, #374151, #4b5563);
+            transform: translateY(-3px);
+        }
+
+        .tool-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .alert-banner {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .system-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(55, 65, 81, 0.3);
+            border-radius: 8px;
+            border: 1px solid #4b5563;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .indicator-online { background: #10b981; }
+        .indicator-warning { background: #f59e0b; }
+        .indicator-offline { background: #ef4444; }
+
+        .vulnerability-scanner {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .scan-button {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+        }
+
+        .scan-button:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+        }
+
+        .scan-results {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(55, 65, 81, 0.3);
+            border-radius: 8px;
+            border: 1px solid #4b5563;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #374151;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 10px;">
+                <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z"/>
+            </svg>
+            CyberGuard Security Operations Center
+        </h1>
+        <p>Real-time Network Security Monitoring & Threat Detection System</p>
+    </div>
+
+    <div class="container">
+        <!-- Alert Banner -->
+        <div class="alert-banner" id="alertBanner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+            </svg>
+            <strong>SECURITY ALERT:</strong> 3 new high-priority threats detected in the last hour
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('dashboard')">Security Dashboard</button>
+            <button class="tab-btn" onclick="showTab('threats')">Threat Analysis</button>
+            <button class="tab-btn" onclick="showTab('network')">Network Monitor</button>
+            <button class="tab-btn" onclick="showTab('vulnerabilities')">Vulnerability Assessment</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <!-- Key Metrics -->
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Security Status</div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#f59e0b">
+                            <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-value status-warning">ELEVATED</div>
+                    <div class="stat-change status-warning">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                        </svg>
+                        3 active threats
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Threats Blocked</div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#ef4444">
+                            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M14.5,9L12,11.5L9.5,9L8,10.5L10.5,13L8,15.5L9.5,17L12,14.5L14.5,17L16,15.5L13.5,13L16,10.5L14.5,9Z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-value status-good">2,847</div>
+                    <div class="stat-change status-good">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15,20H9V12H4.16L12,4.16L19.84,12H15V20Z"/>
+                        </svg>
+                        +12% from yesterday
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Network Traffic</div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#10b981">
+                            <path d="M4,8H6V16H4V8M8,5H10V19H8V5M12,8H14V16H12V8M16,2H18V22H16V2M20,11H22V13H20V11Z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-value status-good">847 GB</div>
+                    <div class="stat-change status-good">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16,6L18.29,8.29L13.41,13.17L9.41,9.17L2,16.59L3.41,18L9.41,12L13.41,16L19.71,9.71L22,12V6H16Z"/>
+                        </svg>
+                        Normal patterns
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Vulnerabilities</div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#ef4444">
+                            <path d="M15.5,12C18,12 20,14 20,16.5C20,17.38 19.75,18.21 19.31,18.9L22.39,22L21,23.39L17.88,20.32C17.19,20.75 16.37,21 15.5,21C13,21 11,19 11,16.5C11,14 13,12 15.5,12M15.5,14A2.5,2.5 0 0,0 13,16.5A2.5,2.5 0 0,0 15.5,19A2.5,2.5 0 0,0 18,16.5A2.5,2.5 0 0,0 15.5,14M10,4A4,4 0 0,1 14,8C14,8.91 13.69,9.75 13.18,10.43C12.32,10.75 11.55,11.26 10.91,11.9L10,12A4,4 0 0,1 6,8A4,4 0 0,1 10,4M2,20V18C2,15.88 5.31,14.14 9.5,14C9.18,14.78 9,15.62 9,16.5C9,17.79 9.38,19 10,20H2Z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-value status-critical">23</div>
+                    <div class="stat-change status-critical">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                        </svg>
+                        5 critical, 18 medium
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
+                        <path d="M4,6H20V16H4M20,18A2,2 0 0,0 22,16V6C22,4.89 21.1,4 20,4H4C2.89,4 2,4.89 2,6V16A2,2 0 0,0 4,18H0V20H24V18H20Z"/>
+                    </svg>
+                    System Status Overview
+                </div>
+                <div class="system-status">
+                    <div class="status-item">
+                        <div class="status-indicator indicator-online"></div>
+                        <span>Firewall</span>
+                        <span style="margin-left: auto; color: #10b981;">Online</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator indicator-online"></div>
+                        <span>IDS/IPS</span>
+                        <span style="margin-left: auto; color: #10b981;">Active</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator indicator-warning"></div>
+                        <span>VPN Gateway</span>
+                        <span style="margin-left: auto; color: #f59e0b;">Warning</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator indicator-online"></div>
+                        <span>Antivirus</span>
+                        <span style="margin-left: auto; color: #10b981;">Updated</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator indicator-offline"></div>
+                        <span>Backup System</span>
+                        <span style="margin-left: auto; color: #ef4444;">Offline</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator indicator-online"></div>
+                        <span>SIEM</span>
+                        <span style="margin-left: auto; color: #10b981;">Monitoring</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Chart -->
+            <div class="chart-container">
+                <div class="chart-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
+                        <path d="M22,21H2V3H4V19H6V17H10V19H12V16H16V19H18V17H22V21M16,8A2,2 0 0,0 18,6V4H20V2H16V4H14V6A2,2 0 0,0 16,8M16,5H18V6H16V5M6,8A2,2 0 0,0 8,6V4H10V2H6V4H4V6A2,2 0 0,0 6,8M6,5H8V6H6V5Z"/>
+                    </svg>
+                    Network Traffic Analysis (Last 24 Hours)
+                </div>
+                <canvas id="trafficChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Threats Tab -->
+        <div id="threats" class="tab-content">
+            <div class="chart-container">
+                <div class="chart-title">🎯 Threat Detection Timeline</div>
+                <canvas id="threatsChart" width="400" height="200"></canvas>
+            </div>
+
+            <div class="threats-list">
+                <div class="chart-title">🚨 Active Security Threats</div>
+                
+                <div class="threat-item threat-high">
+                    <div class="threat-info">
+                        <h4>SQL Injection Attempt</h4>
+                        <p>Source: 192.168.1.45 | Target: Web Server | Time: 14:32:15</p>
+                    </div>
+                    <div class="threat-severity severity-high">High</div>
+                </div>
+
+                <div class="threat-item threat-high">
+                    <div class="threat-info">
+                        <h4>Brute Force Attack</h4>
+                        <p>Source: 203.45.67.89 | Target: SSH Server | Time: 14:28:42</p>
+                    </div>
+                    <div class="threat-severity severity-high">High</div>
+                </div>
+
+                <div class="threat-item threat-medium">
+                    <div class="threat-info">
+                        <h4>Suspicious Port Scan</h4>
+                        <p>Source: 178.92.134.21 | Target: Network Range | Time: 14:25:18</p>
+                    </div>
+                    <div class="threat-severity severity-medium">Medium</div>
+                </div>
+
+                <div class="threat-item threat-medium">
+                    <div class="threat-info">
+                        <h4>Malware Signature Detected</h4>
+                        <p>Source: Internal Host | File: suspicious.exe | Time: 14:20:33</p>
+                    </div>
+                    <div class="threat-severity severity-medium">Medium</div>
+                </div>
+
+                <div class="threat-item threat-low">
+                    <div class="threat-info">
+                        <h4>Failed Login Attempts</h4>
+                        <p>Source: 172.16.0.103 | Target: Domain Controller | Time: 14:15:07</p>
+                    </div>
+                    <div class="threat-severity severity-low">Low</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Monitor Tab -->
+        <div id="network" class="tab-content">
+            <div class="chart-container">
+                <div class="chart-title">🌐 Network Performance Metrics</div>
+                <canvas id="networkChart" width="400" height="200"></canvas>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Bandwidth Usage</div>
+                        <div style="font-size: 1.5rem;">📈</div>
+                    </div>
+                    <div class="stat-value status-good">73%</div>
+                    <div class="stat-change status-good">Within normal limits</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Active Connections</div>
+                        <div style="font-size: 1.5rem;">🔗</div>
+                    </div>
+                    <div class="stat-value status-good">1,247</div>
+                    <div class="stat-change status-good">↗️ +8% increase</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Packet Loss</div>
+                        <div style="font-size: 1.5rem;">📦</div>
+                    </div>
+                    <div class="stat-value status-good">0.02%</div>
+                    <div class="stat-change status-good">Excellent performance</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Latency</div>
+                        <div style="font-size: 1.5rem;">⏱️</div>
+                    </div>
+                    <div class="stat-value status-warning">45ms</div>
+                    <div class="stat-change status-warning">Slightly elevated</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vulnerabilities Tab -->
+        <div id="vulnerabilities" class="tab-content">
+            <div class="vulnerability-scanner">
+                <div class="chart-title">🔍 Vulnerability Assessment Tools</div>
+                <p style="margin-bottom: 20px; color: #9ca3af;">Automated security scanning and assessment capabilities</p>
+                
+                <button class="scan-button" onclick="startVulnerabilityScan()">🔍 Start Network Scan</button>
+                <button class="scan-button" onclick="startPortScan()">🚪 Port Scan</button>
+                <button class="scan-button" onclick="startComplianceCheck()">📋 Compliance Check</button>
+                
+                <div class="scan-results" id="scanResults">
+                    <h4>Scan Results</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div id="scanOutput"></div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid" style="margin-top: 30px;">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Critical Vulnerabilities</div>
+                        <div style="font-size: 1.5rem;">🚨</div>
+                    </div>
+                    <div class="stat-value status-critical">5</div>
+                    <div class="stat-change status-critical">Immediate action required</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Medium Risk</div>
+                        <div style="font-size: 1.5rem;">⚠️</div>
+                    </div>
+                    <div class="stat-value status-warning">18</div>
+                    <div class="stat-change status-warning">Schedule patching</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Low Risk</div>
+                        <div style="font-size: 1.5rem;">ℹ️</div>
+                    </div>
+                    <div class="stat-value status-good">42</div>
+                    <div class="stat-change status-good">Monitor and review</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Compliance Score</div>
+                        <div style="font-size: 1.5rem;">📊</div>
+                    </div>
+                    <div class="stat-value status-warning">78%</div>
+                    <div class="stat-change status-warning">NIST Framework</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Tools -->
+        <div class="security-tools">
+            <div class="tool-card" onclick="launchTool('firewall')">
+                <div class="tool-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="#ef4444">
+                        <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M11,7H13V13H11V7M11,15H13V17H11V15Z"/>
+                    </svg>
+                </div>
+                <h3>Firewall Management</h3>
+                <p>Configure and monitor firewall rules</p>
+            </div>
+            
+            <div class="tool-card" onclick="launchTool('ids')">
+                <div class="tool-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="#3b82f6">
+                        <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z"/>
+                    </svg>
+                </div>
+                <h3>Intrusion Detection</h3>
+                <p>Real-time threat monitoring</p>
+            </div>
+            
+            <div class="tool-card" onclick="launchTool('logs')">
+                <div class="tool-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="#10b981">
+                        <path d="M19,3H5C3.9,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.9 20.1,3 19,3M19,19H5V5H19V19Z"/>
+                    </svg>
+                </div>
+                <h3>Security Logs</h3>
+                <p>Audit and forensic analysis</p>
+            </div>
+            
+            <div class="tool-card" onclick="launchTool('compliance')">
+                <div class="tool-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="#10b981">
+                        <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/>
+                    </svg>
+                </div>
+                <h3>Compliance Check</h3>
+                <p>Regulatory compliance monitoring</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for charts
+        let trafficChart, threatsChart, networkChart;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            updateRealTimeData();
+            
+            // Update data every 30 seconds
+            setInterval(updateRealTimeData, 30000);
+        });
+
+        // Tab navigation
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Traffic Chart
+            const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+            trafficChart = new Chart(trafficCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    datasets: [{
+                        label: 'Inbound Traffic (GB)',
+                        data: [45, 32, 78, 124, 167, 143, 89],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Outbound Traffic (GB)',
+                        data: [38, 28, 65, 98, 134, 118, 76],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: '#374151' }
+                        },
+                        y: { 
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: '#374151' }
+                        }
+                    }
+                }
+            });
+
+            // Threats Chart
+            const threatsCtx = document.getElementById('threatsChart').getContext('2d');
+            threatsChart = new Chart(threatsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'High Priority',
+                        data: [12, 8, 15, 23, 18, 6, 9],
+                        backgroundColor: '#ef4444'
+                    }, {
+                        label: 'Medium Priority',
+                        data: [25, 32, 28, 41, 35, 18, 22],
+                        backgroundColor: '#f59e0b'
+                    }, {
+                        label: 'Low Priority',
+                        data: [45, 52, 48, 63, 58, 34, 41],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: '#374151' }
+                        },
+                        y: { 
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: '#374151' }
+                        }
+                    }
+                }
+            });
+
+            // Network Chart
+            const networkCtx = document.getElementById('networkChart').getContext('2d');
+            networkChart = new Chart(networkCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['HTTP/HTTPS', 'SSH', 'FTP', 'DNS', 'Other'],
+                    datasets: [{
+                        data: [45, 20, 15, 12, 8],
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#8b5cf6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update real-time data
+        function updateRealTimeData() {
+            // Simulate real-time updates
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // Update threat count randomly
+            const threatCount = Math.floor(Math.random() * 5) + 1;
+            document.querySelector('.alert-banner').innerHTML = 
+                `🚨 <strong>SECURITY ALERT:</strong> ${threatCount} new high-priority threats detected - Last updated: ${timestamp}`;
+            
+            // Update charts with new data
+            if (trafficChart) {
+                trafficChart.data.datasets[0].data = trafficChart.data.datasets[0].data.map(() => 
+                    Math.floor(Math.random() * 200) + 50);
+                trafficChart.update();
+            }
+        }
+
+        // Vulnerability scanning functions
+        function startVulnerabilityScan() {
+            showScanResults();
+            simulateScan('Network Vulnerability Scan', [
+                'Scanning 192.168.1.0/24 network range...',
+                'Checking for open ports...',
+                'Testing service vulnerabilities...',
+                'Analyzing SSL/TLS configurations...',
+                'Checking for default credentials...',
+                'Scan complete: 5 critical, 18 medium, 42 low vulnerabilities found'
+            ]);
+        }
+
+        function startPortScan() {
+            showScanResults();
+            simulateScan('Port Scan Analysis', [
+                'Scanning target hosts...',
+                'Port 22 (SSH): Open - Secure',
+                'Port 80 (HTTP): Open - Redirect to HTTPS',
+                'Port 443 (HTTPS): Open - SSL Certificate Valid',
+                'Port 3389 (RDP): Filtered - Security Policy Applied',
+                'Port scan complete: 4 services detected'
+            ]);
+        }
+
+        function startComplianceCheck() {
+            showScanResults();
+            simulateScan('NIST Cybersecurity Framework Compliance', [
+                'Checking Identity and Access Management...',
+                'Verifying Data Protection controls...',
+                'Auditing Incident Response procedures...',
+                'Reviewing Security Awareness training...',
+                'Validating Risk Management processes...',
+                'Compliance check complete: 78% framework adherence'
+            ]);
+        }
+
+        function showScanResults() {
+            document.getElementById('scanResults').style.display = 'block';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('scanOutput').innerHTML = '';
+        }
+
+        function simulateScan(scanType, steps) {
+            const output = document.getElementById('scanOutput');
+            const progress = document.getElementById('progressFill');
+            
+            output.innerHTML = `<h5 style="color: #3b82f6; margin-bottom: 15px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 5px;">
+                    <path d="M15.5,12C18,12 20,14 20,16.5C20,17.38 19.75,18.21 19.31,18.9L22.39,22L21,23.39L17.88,20.32C17.19,20.75 16.37,21 15.5,21C13,21 11,19 11,16.5C11,14 13,12 15.5,12Z"/>
+                </svg>
+                ${scanType} - Starting...
+            </h5>`;
+            
+            let currentStep = 0;
+            const interval = setInterval(() => {
+                if (currentStep < steps.length) {
+                    output.innerHTML += `<div style="margin: 8px 0; color: #10b981;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 5px;">
+                            <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/>
+                        </svg>
+                        ${steps[currentStep]}
+                    </div>`;
+                    progress.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
+                    currentStep++;
+                } else {
+                    clearInterval(interval);
+                    output.innerHTML += `<div style="margin-top: 15px; padding: 10px; background: rgba(16, 185, 129, 0.2); border-radius: 6px; color: #10b981;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 5px;">
+                            <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/>
+                        </svg>
+                        <strong>Scan completed successfully!</strong>
+                    </div>`;
+                }
+            }, 1500);
+        }
+
+        // Security tool launcher
+        function launchTool(toolName) {
+            const tools = {
+                'firewall': 'Firewall Management Console',
+                'ids': 'Intrusion Detection System',
+                'logs': 'Security Event Log Analyzer',
+                'compliance': 'Compliance Monitoring Dashboard'
+            };
+            
+            alert(`
+                🚀 Launching ${tools[toolName]}...
+                
+                This would open the ${tools[toolName]} in a production environment.
+                
+                Features would include:
+                • Real-time monitoring
+                • Configuration management  
+                • Alert management
+                • Reporting capabilities
+            `);
+        }
+
+        // Simulate security events
+        function generateSecurityEvent() {
+            const events = [
+                { type: 'Malware Detected', severity: 'high', source: 'Endpoint Protection' },
+                { type: 'Unauthorized Access Attempt', severity: 'medium', source: 'Access Control' },
+                { type: 'Suspicious Network Activity', severity: 'medium', source: 'Network Monitor' },
+                { type: 'Policy Violation', severity: 'low', source: 'DLP System' },
+                { type: 'Failed Authentication', severity: 'low', source: 'Identity Provider' }
+            ];
+            
+            return events[Math.floor(Math.random() * events.length)];
+        }
+
+        // Auto-refresh security status
+        setInterval(() => {
+            const event = generateSecurityEvent();
+            console.log(`New security event: ${event.type} (${event.severity}) from ${event.source}`);
+            
+            // Update threat counter
+            const currentThreats = parseInt(document.querySelector('.stat-value.status-warning').textContent);
+            if (event.severity === 'high') {
+                document.querySelector('.stat-value.status-warning').textContent = 'CRITICAL';
+                document.querySelector('.stat-value.status-warning').className = 'stat-value status-critical';
+            }
+        }, 45000); // Every 45 seconds
+    </script>
+</body>
+</html>
